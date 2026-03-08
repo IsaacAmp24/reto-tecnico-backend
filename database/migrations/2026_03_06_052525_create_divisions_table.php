@@ -13,6 +13,20 @@ return new class extends Migration
     {
         Schema::create('divisions', function (Blueprint $table) {
             $table->id();
+            $table->string('name', 45)->unique();
+
+            $table->foreignId('parent_id')
+                ->nullable()
+                ->constrained('divisions')
+                ->nullOnDelete();
+
+            // nivel y la cant. colabs deben ser enteros positivos aleatorios
+            $table->unsignedInteger('level')->comment('Nivel de la división');
+            $table->unsignedInteger('collaborators')->comment('Cantidad de colaboradores');
+
+            // embajadores con nombre completo
+            $table->string('ambassadors', 120)->nullable();
+            
             $table->timestamps();
         });
     }

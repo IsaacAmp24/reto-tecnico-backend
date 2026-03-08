@@ -2,64 +2,75 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Queries\DivisionIndexQuery;
+use App\Http\Requests\StoreDivisionRequest;
+use App\Http\Requests\UpdateDivisionRequest;
+use App\Http\Services\DivisionService;
 use App\Models\Division;
+
 use Illuminate\Http\Request;
 
 class DivisionController extends Controller
 {
-    /**
-     * Display a listing of the resource.
-     */
-    public function index()
-    {
-        //
+    public function __construct(  
+        private readonly DivisionService $divisionService,
+        private readonly DivisionIndexQuery $divisionIndexQuery,
+    )
+    {}
+
+    public function index(Request $request){
+        $perPage = (int) $request->query('per_page');
+
+        $query = $this->divisionIndexQuery->build($request);
+        $result = $query->paginate($perPage);
+
+         return response()->json([
+            'data' => $result->items(),
+            'meta' => [
+                'total' => $result->total(),
+                'current_page' => $result->currentPage(),
+                'per_page' => $result->perPage(),
+            ],
+        ]);
     }
 
-    /**
-     * Show the form for creating a new resource.
-     */
-    public function create()
+    public function store(StoreDivisionRequest $request)
     {
-        //
+        $division = $this->divisionService->createDivision($request->validated());
+        return response()->json($division, 201);
     }
 
-    /**
-     * Store a newly created resource in storage.
-     */
-    public function store(Request $request)
-    {
-        //
-    }
-
-    /**
-     * Display the specified resource.
-     */
     public function show(Division $division)
     {
-        //
+        $division->load('parent:id,name')->loadCount('children');
+        return response()->json($division);
     }
 
-    /**
-     * Show the form for editing the specified resource.
-     */
-    public function edit(Division $division)
+    public function update(UpdateDivisionRequest $request, Division $division)
     {
-        //
+        try {
+            $division = $this->divisionService->updateDivision($division, $request->validated());
+            return response()->json($division);
+        } catch (\InvalidArgumentException $e) {
+            return response()->json(['message' => $e->getMessage()], 422);
+        }
     }
 
-    /**
-     * Update the specified resource in storage.
-     */
-    public function update(Request $request, Division $division)
-    {
-        //
-    }
-
-    /**
-     * Remove the specified resource from storage.
-     */
     public function destroy(Division $division)
     {
-        //
+        $this->divisionService->deleteDivision($division);
+        return response()->json(null, 204);
+    }
+
+    public function subdivisions(Division $division)
+    {
+        $children = Division::query()
+            ->where('parent_id', $division->id)
+            ->with('parent:id,name')
+            ->withCount('children')
+            ->orderBy('id', 'asc')
+            ->get();
+
+        return response()->json($children);
     }
 }
