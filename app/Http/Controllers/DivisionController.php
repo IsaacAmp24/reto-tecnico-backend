@@ -73,4 +73,26 @@ class DivisionController extends Controller
 
         return response()->json($children);
     }
+
+    public function filterOptions()
+{
+    $names = Division::query()
+        ->orderBy('name')
+        ->pluck('name')
+        ->filter()
+        ->values();
+
+    $parentNames = Division::query()
+        ->join('divisions as p', 'divisions.parent_id', '=', 'p.id')
+        ->orderBy('p.name')
+        ->pluck('p.name')
+        ->unique()
+        ->filter()
+        ->values();
+
+    return response()->json([
+        'name' => $names,
+        'parent_name' => $parentNames,
+    ]);
+}
 }
