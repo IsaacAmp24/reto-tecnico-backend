@@ -19,7 +19,7 @@ return [
 
     'allowed_methods' => ['*'],
 
-    'allowed_origins' => ['https://gregarious-licorice-750477.netlify.app/'],
+    'allowed_origins' => ['https://gregarious-licorice-750477.netlify.app'],
 
     'allowed_origins_patterns' => [],
 
